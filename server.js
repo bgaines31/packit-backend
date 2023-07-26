@@ -7,6 +7,7 @@ require('dotenv').config('.env');
 const express = require('express');
 const app = express();
 const { Trip, Item } = require('./db');
+const {trips, items } = require('./db/seedData')
 const cors = require('cors');
 const morgan = require('morgan');
 const { PORT } = process.env || 3000;
@@ -17,6 +18,15 @@ app.use(cors());
 
 app.get('/', async (req, res, next) => {
   try {
+    res.send(await Trip.findAll());
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+});
+app.get('/seed', async (req, res, next) => {
+  try {
+    Trip.bulkCreate(trips)
     res.send(await Trip.findAll());
   } catch (error) {
     console.error(error);
