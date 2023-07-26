@@ -4,8 +4,8 @@ const trips = [
     startDate: 2023 / 9 / 13,
     endDate: 2023 / 9 / 11,
     coverPhoto:
-      'https://www.travelandleisure.com/thmb/SPUPzO88ZXq6P4Sm4mC5Xuinoik=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/eiffel-tower-paris-france-EIFFEL0217-6ccc3553e98946f18c893018d5b42bde.jpg',
-      tripId: 1
+      'https://www.travelandleisure.com/thmb/SPUPzO88ZXq6P4Sm4mC5Xuinoik=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/eiffel-tower-paris-france-EIFFEL0217-6ccc3553e98946f18c893018d5b42bde.jpg'
+      // tripId: 1
   },
   {
     title: 'Barcelona, Spain',
