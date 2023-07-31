@@ -7,7 +7,7 @@ require('dotenv').config('.env');
 const express = require('express');
 const app = express();
 const { Trip, Item } = require('./db');
-const {trips, items } = require('./db/seedData')
+const { trips, items } = require('./db/seedData');
 const cors = require('cors');
 const morgan = require('morgan');
 const { PORT } = process.env || 3000;
@@ -26,7 +26,7 @@ app.get('/', async (req, res, next) => {
 });
 app.get('/seed', async (req, res, next) => {
   try {
-    Trip.bulkCreate(trips)
+    Trip.bulkCreate(trips, items);
     res.send(await Trip.findAll());
   } catch (error) {
     console.error(error);
@@ -49,20 +49,25 @@ app.get('/trips/:id', async (req, res, next) => {
     next(error);
   }
 });
-app.post('/trips', async (req, res) => {
+app.post('/trips', async (req, res, next) => {
   const { title, startDate, endDate, coverPhoto } = req.body;
-  res.send(await Trip.create(title, startDate, endDate, coverPhoto));
+  await Trip.create({ title, startDate, endDate, coverPhoto });
+  res.send(await Trip.findAll());
 });
 
+app.put('/trips/:id', async (req, res, next) => {
+  await Trip.update(req.body, { where: { id: req.params.id } });
+    res.send(await Trip.findAll());
+});
 app.delete('/trips/:id', async (req, res, next) => {
   try {
-    const {id} = req.params;
+    const { id } = req.params;
     const existingTrip = await Trip.findByPk(id);
-    if(!existingTrip) {
+    if (!existingTrip) {
       res.status(404).send(`Trip with id ${id} not found`);
       return;
     }
-    await Trip.destroy({where: {id}});
+    await Trip.destroy({ where: { id } });
     res.send(await Trip.findAll());
   } catch (error) {
     next(error);
@@ -97,18 +102,18 @@ app.get('/:id/packingList', async (req, res, next) => {
 });
 app.post('/items', async (req, res) => {
   const { name, packed } = req.body;
-  res.send(await Item.create(name, packed = false));
+  res.send(await Item.create(name, (packed = false)));
 });
 
 app.delete('/items/:id', async (req, res, next) => {
   try {
-    const {id} = req.params;
+    const { id } = req.params;
     const existingItem = await Item.findByPk(id);
-    if(!existingItem) {
+    if (!existingItem) {
       res.status(404).send(`Item with id ${id} not found`);
       return;
     }
-    await Item.destroy({where: {id}});
+    await Item.destroy({ where: { id } });
     res.send(await Item.findAll());
   } catch (error) {
     next(error);
