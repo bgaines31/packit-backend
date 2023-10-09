@@ -1,21 +1,101 @@
-// // const { db } = require('./models/User');
-// const app = require('./app');
 const { sequelize } = require('./db/db');
-// import { Trip } from './models/Trip';
-// const PORT = process.env.PORT || 3000;
 require('dotenv').config('.env');
 const express = require('express');
 const app = express();
-const { Trip, Item } = require('./db');
+const { Trip, Item, User } = require('./db');
 const { trips, items } = require('./db/seedData');
 const cors = require('cors');
-const morgan = require('morgan');
-const { PORT } = process.env || 3000;
+const { PORT, JWT_SECRET } = process.env;
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content, Accept, Content-Type, Authorization"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+  );
+  next();
+});
 
+const setUser = async (req, res, next) => {
+  try {
+    const token = await req.headers.authorization.split(" ")[1];
+    const decodedToken = await jwt.verify(token, JWT_SECRET);
+    const user = await decodedToken;
+    req.user = user;
+    next();
+  } catch (error) {
+    res.status(401).json({
+      error: new Error("Invalid request!"),
+    });
+  }
+};
+//SIGN UP -- DONE
+app.post('/signup', async (req, res, next) => {
+  const hashPassword = async (password) => {
+    const hash = await bcrypt.hash(password, 10);
+    return hash;
+  };
+  try {
+    const { password, name, email } = req.body;
+    const hashedPassword = await hashPassword(password, 10);
+    const user = await User.create({
+      name,
+      password: hashedPassword,
+      email,
+    });
+    const token = jwt.sign({ email, id: user.id }, JWT_SECRET);
+    res.send({
+      message: 'successfully created user ' + user.name,
+      token: token,
+    });
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+});
+
+// LOGIN -- DONE
+app.post('/login', async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      res.sendStatus(401);
+    } else {
+      const match = await bcrypt.compare(password, user.password);
+      if (!match) {
+        res.sendStatus(401);
+      } else {
+        const token = jwt.sign({ email, id: user.id }, JWT_SECRET, {
+          expiresIn: '24h',
+        });
+        res.send({
+          message: 'successfully logged in ' + user.name,
+          token: token,
+        });
+      }
+    }
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+});
+
+app.get("/auth-endpoint", setUser, (req, res) => {
+  res.json({ message: "You are authorized to access me" });
+});
+
+
+// ---------------------------------------------------
 app.get('/', async (req, res, next) => {
   try {
     res.send(await Trip.findAll());
@@ -57,7 +137,7 @@ app.post('/trips', async (req, res, next) => {
 
 app.put('/trips/:id', async (req, res, next) => {
   await Trip.update(req.body, { where: { id: req.params.id } });
-    res.send(await Trip.findAll());
+  res.send(await Trip.findAll());
 });
 app.delete('/trips/:id', async (req, res, next) => {
   try {
